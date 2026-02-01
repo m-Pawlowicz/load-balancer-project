@@ -1,9 +1,9 @@
 ---
 - name: Deploy and Update Docker App
-  hosts: myserver   # Matches the alias in your ~/.ssh/config
+  hosts: mikrus
   become: yes       # Uses sudo to run docker commands
   vars:
-    repo_url: "https://github.com/username/my-repo.git"
+    repo_url: "https://github.com/m-Pawlowicz/load-balancer-project"
     project_dir: "/app/load-balancer"
     # Using Cloudflare Tunnel - no SSL certs needed in nginx
     use_cloudflare: "true"
@@ -29,10 +29,10 @@
         build: always      # Ensures 'docker compose build' runs
         pull: always       # Pulls latest base images (e.g. node:latest)
         remove_orphans: yes
-        env:
-          USE_CLOUDFLARE: "{{ use_cloudflare }}"
-          NGINX_PORT: "{{ nginx_port }}"
-          NGINX_INTERNAL_PORT: "{{ nginx_internal_port }}"
+      environment:
+        USE_CLOUDFLARE: "{{ use_cloudflare }}"
+        NGINX_PORT: "{{ nginx_port }}"
+        NGINX_INTERNAL_PORT: "{{ nginx_internal_port }}"
       # Optimization: Only restart if code changed OR if containers aren't running.
       # If you want to force a restart every single time, remove the 'when' line.
       when: git_output.changed or force_restart | default(false)
