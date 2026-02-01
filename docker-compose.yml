@@ -1,0 +1,100 @@
+services:
+  step-ca:
+    image: smallstep/step-ca
+    ports:
+      - "9000:9000"
+    volumes:
+      - step:/home/step
+    environment:
+      - DOCKER_STEPCA_INIT_NAME=Smallstep
+      - DOCKER_STEPCA_INIT_DNS_NAMES=localhost,step-ca
+      - DOCKER_STEPCA_INIT_REMOTE_MANAGEMENT=true
+      - DOCKER_STEPCA_INIT_ACME=true
+    networks:
+      app-network:
+        ipv4_address: 172.20.0.10
+    healthcheck:
+      test: ["CMD", "step", "ca", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  node1:
+    build:
+      context: .
+      dockerfile: node.Dockerfile
+    environment:
+      - NODE_ID=node1
+    volumes:
+      - step:/home/step:ro
+    networks:
+      app-network:
+        ipv4_address: 172.20.0.11
+    depends_on:
+      step-ca:
+        condition: service_healthy
+
+  node2:
+    build:
+      context: .
+      dockerfile: node.Dockerfile
+    environment:
+      - NODE_ID=node2
+    volumes:
+      - step:/home/step:ro
+    networks:
+      app-network:
+        ipv4_address: 172.20.0.12
+    depends_on:
+      step-ca:
+        condition: service_healthy
+
+  node3:
+    build:
+      context: .
+      dockerfile: node.Dockerfile
+    environment:
+      - NODE_ID=node3
+    volumes:
+      - step:/home/step:ro
+    networks:
+      app-network:
+        ipv4_address: 172.20.0.13
+    depends_on:
+      step-ca:
+        condition: service_healthy
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
+      args:
+        USE_CLOUDFLARE: ${USE_CLOUDFLARE:-false}
+        CERT_FILE: ${CERT_FILE:-nginx.crt}
+        KEY_FILE: ${KEY_FILE:-nginx.key}
+    ports:
+      - "${NGINX_PORT:-443}:${NGINX_INTERNAL_PORT:-443}"
+    volumes:
+      - step:/home/step:ro
+    networks:
+      app-network:
+        ipv4_address: 172.20.0.20
+    depends_on:
+      step-ca:
+        condition: service_healthy
+      node1:
+        condition: service_started
+      node2:
+        condition: service_started
+      node3:
+        condition: service_started
+
+volumes:
+  step:
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

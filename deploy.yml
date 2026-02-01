@@ -1,0 +1,38 @@
+---
+- name: Deploy and Update Docker App
+  hosts: myserver   # Matches the alias in your ~/.ssh/config
+  become: yes       # Uses sudo to run docker commands
+  vars:
+    repo_url: "https://github.com/username/my-repo.git"
+    project_dir: "/app/load-balancer"
+    # Using Cloudflare Tunnel - no SSL certs needed in nginx
+    use_cloudflare: "true"
+    nginx_port: "8080"  # Cloudflared will connect to this port
+    nginx_internal_port: "80"  # nginx listens on HTTP inside container                          
+
+  tasks:
+    # 1. Fetch the latest code
+    - name: Pull latest code from git
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ project_dir }}"
+        version: main
+        force: yes
+      register: git_output
+
+    # 2. Run Docker Compose
+    # This acts like 'docker compose up -d --build'
+    - name: Start/Restart Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        state: present
+        build: always      # Ensures 'docker compose build' runs
+        pull: always       # Pulls latest base images (e.g. node:latest)
+        remove_orphans: yes
+        env:
+          USE_CLOUDFLARE: "{{ use_cloudflare }}"
+          NGINX_PORT: "{{ nginx_port }}"
+          NGINX_INTERNAL_PORT: "{{ nginx_internal_port }}"
+      # Optimization: Only restart if code changed OR if containers aren't running.
+      # If you want to force a restart every single time, remove the 'when' line.
+      when: git_output.changed or force_restart | default(false)
