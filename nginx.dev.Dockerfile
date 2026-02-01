@@ -8,7 +8,7 @@ ARG KEY_FILE=nginx.key
 COPY ${CERT_FILE} /tmp/nginx.crt
 COPY ${KEY_FILE} /tmp/nginx.key
 
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.dev.conf /etc/nginx/nginx.conf
 COPY scripts/nginx-entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh

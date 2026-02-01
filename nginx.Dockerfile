@@ -1,7 +1,7 @@
 FROM nginx
 
 # Production version - no SSL certificates needed (served via Cloudflare tunnel)
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.prod.conf /etc/nginx/nginx.conf
 COPY scripts/nginx-entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
