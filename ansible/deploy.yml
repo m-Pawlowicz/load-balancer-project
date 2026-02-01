@@ -30,9 +30,10 @@
         pull: always       # Pulls latest base images (e.g. node:latest)
         remove_orphans: yes
       environment:
+        DOCKERFILE: "nginx.Dockerfile"
         USE_CLOUDFLARE: "{{ use_cloudflare }}"
         NGINX_PORT: "{{ nginx_port }}"
         NGINX_INTERNAL_PORT: "{{ nginx_internal_port }}"
       # Optimization: Only restart if code changed OR if containers aren't running.
       # If you want to force a restart every single time, remove the 'when' line.
-      when: git_output.changed or force_restart | default(false)
+      when: git_output.changed or (force_restart | default(false) | bool)

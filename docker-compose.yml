@@ -67,7 +67,7 @@ services:
   nginx:
     build:
       context: .
-      dockerfile: nginx.Dockerfile
+      dockerfile: ${DOCKERFILE:-nginx.Dockerfile}
       args:
         USE_CLOUDFLARE: ${USE_CLOUDFLARE:-false}
         CERT_FILE: ${CERT_FILE:-nginx.crt}
